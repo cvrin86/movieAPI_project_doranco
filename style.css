@@ -1,0 +1,45 @@
+
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body{
+    font-family: serif;
+    text-align: center;
+}
+.container{
+   
+    margin: 50px;
+}
+.container-movies{
+    
+display: flex;
+justify-content: center;
+align-items: center;
+flex-wrap: wrap;
+
+    background-color: #ffefd3;
+    
+    
+}
+
+.movie-card{
+    background-color: #90cac7;
+    object-fit: cover;
+}
+.btn-container{
+    padding: 20px;
+}
+.btn-seemore{
+    padding: 10px 20px;
+    background-color: #086a83;
+    border: none;
+    border-radius: 5px;
+    font-size: 20px;
+    color:#f0f0f0
+}
+.poster-image{
+    object-fit: cover;
+}
