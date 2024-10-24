@@ -13,71 +13,47 @@ document.addEventListener("DOMContentLoaded", () => {
   let totalPages = 1;
   let moviesCache = [];
 
-  async function getMovies(page = 1) {
+  // Fonction générique pour appeler l'API TMDB
+  async function fetchMovies(endpoint, page = 4) {
     try {
       const response = await fetch(
-        `https://api.themoviedb.org/3/movie/popular?api_key=${keyApi}&page=${page}`
+        `https://api.themoviedb.org/3/movie/${endpoint}?api_key=${keyApi}&page=${page}`
       );
-      console.log("Response status:", response.status);
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const data = await response.json();
-      console.log("Data received:", data);
-      totalPages = data.total_pages;
-
-      moviesCache.push(...data.results);
-      displayMovies();
-
-      if (currentPage >= totalPages) {
-        btnSeeMore.style.display = "none";
-      }
-    } catch (error) {
-      console.error("Fetch error: ", error);
-    }
-  }
-
-  async function getMoviesNowPlaying(page = 3) {
-    try {
-      const response = await fetch(
-        `https://api.themoviedb.org/3/movie/now_playing?api_key=${keyApi}&page=${page}`
-      );
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
+      if (!response.ok) throw new Error("Erreur réseau");
 
       const data = await response.json();
       totalPages = data.total_pages;
       moviesCache.push(...data.results);
       displayMovies();
 
-      if (currentPage >= totalPages) {
-        btnSeeMore.style.display = "none";
-      }
+      if (currentPage >= totalPages) btnSeeMore.style.display = "none";
     } catch (error) {
-      console.error("Fetch error: ", error);
+      console.error("Erreur de récupération des films : ", error);
     }
   }
 
+  // Affichage des films
   function displayMovies() {
-    let html = "";
     const moviesToDisplay = moviesCache.slice(
       (currentPage - 1) * 10,
       currentPage * 10
     );
 
-    moviesToDisplay.forEach((movie) => {
-      const imageUrl = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
-      html += `
+    const html = moviesToDisplay
+      .map(
+        (movie) => `
         <div class="movie-card" data-id="${movie.id}">
-          <img src="${imageUrl}" alt="${movie.title}">
-        </div>
-      `;
-    });
+          <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}">
+        </div>`
+      )
+      .join("");
 
     containerMovies.insertAdjacentHTML("beforeend", html);
+    attachMovieClickEvents();
+  }
 
+  // Ajouter les événements de clic aux films
+  function attachMovieClickEvents() {
     document.querySelectorAll(".movie-card").forEach((card) => {
       card.addEventListener("click", (e) => {
         const movieId = e.currentTarget.getAttribute("data-id");
@@ -86,10 +62,39 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Recherche de films par titre
+  async function searchMovieByTitle() {
+    const searchMovie = searchInput.value.trim();
+    if (!searchMovie) return alert("Veuillez entrer un titre de film.");
+
+    moviesCache = []; // Réinitialiser le cache
+    containerMovies.innerHTML = ""; // Vider le conteneur
+
+    try {
+      const response = await fetch(
+        `https://api.themoviedb.org/3/search/movie?api_key=${keyApi}&query=${searchMovie}`
+      );
+      if (!response.ok) throw new Error("Erreur réseau");
+
+      const data = await response.json();
+      moviesCache = data.results;
+      displayMovies();
+      searchInput.value = "";
+    } catch (error) {
+      console.error("Erreur lors de la recherche de film : ", error);
+    }
+  }
+
+  // Gestion des événements
+  searchBtn.addEventListener("click", searchMovieByTitle);
+  searchInput.addEventListener("keypress", (event) => {
+    if (event.key === "Enter") searchMovieByTitle();
+  });
+
   btnSeeMore.addEventListener("click", () => {
     if (currentPage < totalPages) {
       currentPage++;
-      getMovies(currentPage);
+      fetchMovies("popular", currentPage);
     } else {
       btnSeeMore.style.display = "none";
     }
@@ -98,69 +103,10 @@ document.addEventListener("DOMContentLoaded", () => {
   btnNowPlaying.addEventListener("click", () => {
     moviesCache = []; // Réinitialiser le cache des films
     currentPage = 1;
-    containerMovies.innerHTML = ""; // Vide le conteneur avant d'afficher les résultats
-    getMoviesNowPlaying(); // Charger les films maintenant à l'affiche
-  });
-
-  async function searchMovieByTitle() {
-    const searchMovie = searchInput.value.trim();
-
-    if (!searchMovie) {
-      alert("Please enter the title of the movie.");
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `https://api.themoviedb.org/3/search/movie?api_key=${keyApi}&query=${searchMovie}`
-      );
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const data = await response.json();
-      moviesCache = data.results;
-      currentPage = 1;
-      containerMovies.innerHTML = ""; // Vide le conteneur avant d'afficher les résultats
-      displaySearchResults();
-    } catch (error) {
-      console.error("Fetch error: ", error);
-    }
-  }
-
-  function displaySearchResults() {
-    let html = "";
-
-    if (moviesCache.length === 0) {
-      html = "<p>No movies found.</p>";
-    } else {
-      moviesCache.forEach((movie) => {
-        const imageUrl = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
-        html += `
-          <div class="movie-card" data-id="${movie.id}">
-            <img src="${imageUrl}" alt="${movie.title}">
-          </div>
-        `;
-      });
-    }
-
-    containerMovies.insertAdjacentHTML("beforeend", html);
-
-    document.querySelectorAll(".movie-card").forEach((card) => {
-      card.addEventListener("click", (e) => {
-        const movieId = e.currentTarget.getAttribute("data-id");
-        window.location.href = `movie.html?id=${movieId}`;
-      });
-    });
-  }
-
-  searchBtn.addEventListener("click", searchMovieByTitle);
-  searchInput.addEventListener("keypress", (event) => {
-    if (event.key === "Enter") {
-      searchMovieByTitle();
-    }
+    containerMovies.innerHTML = ""; // Vider le conteneur
+    fetchMovies("now_playing"); // Charger les films "now playing"
   });
 
   // Chargement initial des films populaires
-  getMovies();
+  fetchMovies("popular");
 });

@@ -1,70 +1,80 @@
 "use strict";
 
+// Clé API et conteneur principal
 const keyApi = "cc21ebb0db4ce9af88a32340aab320b7";
-
 const container = document.querySelector(".movie-container");
 
-// Fonction pour récupérer les paramètres de l'URL
-function getMovieIdFromURL() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("id");
-}
+// Récupérer l'ID du film depuis l'URL
+const getMovieIdFromURL = () =>
+  new URLSearchParams(window.location.search).get("id");
+
+// Formater la date de sortie
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString("fr-FR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
+// Fonction générique pour effectuer des requêtes API
+const fetchData = async (url) => {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Erreur de requête: ${response.status}`);
+  return response.json();
+};
 
 // Fonction pour afficher les détails du film
-async function displayMovieDetails(movieId) {
+const displayMovieDetails = async (movieId) => {
   try {
-    // Récupérer les détails du film
-    const movieResponse = await fetch(
-      `https://api.themoviedb.org/3/movie/${movieId}?&language=fr-FR&api_key=${keyApi}`
-    );
-    const movie = await movieResponse.json();
+    // Récupération des détails du film et des vidéos associées (bande-annonces)
+    const [movie, videos] = await Promise.all([
+      fetchData(
+        `https://api.themoviedb.org/3/movie/${movieId}?&language=fr-FR&api_key=${keyApi}`
+      ),
+      fetchData(
+        `https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${keyApi}&language=fr-FR`
+      ),
+    ]);
 
-    // Récupérer les vidéos du film (bande-annonces)
-    const videosResponse = await fetch(
-      `https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${keyApi}&language=fr-FR`
-    );
-    const videos = await videosResponse.json();
-    console.log(videos);
     // Trouver la bande-annonce
-    const trailer = videos.results.find((video) => video.type === "Trailer");
+    const trailer = videos.results.find(
+      (video) => video.type === "Trailer" && video.site === "YouTube"
+    );
 
-    // Formater la date de sortie
-    const releaseDate = new Date(movie.release_date);
-    const formattedDate = releaseDate.toLocaleDateString("fr-FR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-
-    // Construction de la chaîne HTML pour les détails du film avec la bande-annonce
-    let html = `
+    // Construction du contenu HTML pour l'affichage des détails du film
+    const html = `
       <article class="movie-details">
         ${
           trailer
-            ? `<iframe width="100%" height="400px" src="https://www.youtube.com/embed/${trailer.key}" frameborder="0" allowfullscreen></iframe>`
+            ? `<iframe class="video-movie" src="https://www.youtube.com/embed/${trailer.key}" frameborder="0" allowfullscreen></iframe>`
             : `<p>Aucune bande-annonce disponible.</p>`
         }
         <h2 class="movie-title">${movie.title}</h2>
         <p class="movie-description">${movie.overview}</p>
-        <p class="movie-release-date"><strong>Date de sortie :</strong> ${formattedDate}</p>
+        <p class="movie-release-date"><strong>Date de sortie :</strong> ${formatDate(
+          movie.release_date
+        )}</p>
         <p class="movie-genres"><strong>Genres :</strong> ${movie.genres
           .map((genre) => genre.name)
           .join(", ")}</p>
+        <p><strong>Note :</strong> ${movie.vote_average}</p>
       </article>
     `;
 
-    // Utilisation de insertAdjacentHTML pour insérer le HTML
+    // Insertion du HTML dans le conteneur
     container.insertAdjacentHTML("beforeend", html);
   } catch (error) {
-    console.error("Fetch error: ", error); // Affichage de l'erreur en console
+    console.error("Erreur lors du chargement des détails du film :", error);
+    container.innerHTML =
+      "<p>Erreur lors du chargement des détails du film.</p>";
   }
-}
+};
 
-// Récupère l'ID du film depuis l'URL et affiche ses détails
-const movieId = getMovieIdFromURL(); // Récupération de l'ID du film
+// Récupérer l'ID du film et afficher ses détails
+const movieId = getMovieIdFromURL();
 if (movieId) {
-  // Vérification si l'ID existe
-  displayMovieDetails(movieId); // Appel de la fonction pour récupérer les détails du film
+  displayMovieDetails(movieId);
 } else {
-  console.error("No movie ID found in the URL."); // Gestion de l'absence d'ID
+  console.error("Aucun ID de film trouvé dans l'URL.");
 }
