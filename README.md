@@ -21,7 +21,7 @@ Prérequis
 
  - Clé API TMDB : Vous aurez besoin d'une clé API de The Movie Database pour que l'application puisse récupérer les données des films.
 
-Installation
+ - Installation
    
 Clonez ce dépôt dans votre environnement local :
 git clone https://github.com/cvrin86/movieAPI.git
@@ -30,7 +30,7 @@ Naviguez dans le répertoire du projet :
 cd movieAPI
 Remplacez la clé API (actuellement keyApi) par votre propre clé API TMDB dans le fichier JavaScript principal.
 
-Utilisation
+ - Utilisation
 
 Ouvrez le fichier index.html dans votre navigateur pour accéder à l'application.
 
