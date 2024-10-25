@@ -31,5 +31,6 @@ cd movieAPI
 Remplacez la clé API (actuellement keyApi) par votre propre clé API TMDB dans le fichier JavaScript principal.
 
 Utilisation
+
 Ouvrez le fichier index.html dans votre navigateur pour accéder à l'application.
 
