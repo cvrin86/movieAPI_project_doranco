@@ -160,6 +160,16 @@ hr{
     
 }
 
+.back-home{
+    border: none;
+    background-color: transparent;
+    margin:20px 50px;
+}
+.back-home a{
+    
+    text-decoration: none;
+}
+
 
 
 @media screen and (min-width:725px) {
